@@ -12,6 +12,18 @@ export type ParseResult = {
   estimateSheet: EstimateSheet,
 }
 
+export type Row = {
+  entries: (string|number)[]
+}
+
+export type Column = (string|number)[]
+
+export type Table = {
+  columnNames: string[],
+  columns: Column[],
+  rows: Row[],
+}
+
 export type Detail = {
   detail: string,
   quantity: string,
