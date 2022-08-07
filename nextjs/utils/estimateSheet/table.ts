@@ -1,7 +1,7 @@
-import {EstimateSheet, Row, Table} from "../../types"
+import {Column, EstimateSheet, Table} from "../../types"
 
 export const retrieveColumn = (table: Table, columnIndex: number): (number|string)[] => {
-  return table.rows.map(row => row.entries.at(columnIndex) ?? "")
+  return table.columns[columnIndex]
 }
 
 export const reorderColumn = <T>(column: T[], startRowIndex: number, endRowIndex: number): T[] => {
@@ -27,33 +27,42 @@ export const reorderColumn = <T>(column: T[], startRowIndex: number, endRowIndex
   return newColumn
 }
 
-export const updateTableWithNewColumn = (table: Table, columnIndex: number, column: (string|number)[]): Table => {
-  const totalColumns = table.columnNames.length
-  const newColumnsData = Array.from({length: totalColumns}, () => [] as (string|number)[])
-
-  for (let i=0; i<table.rows.length; i++) {
-    for (let k=0; k<totalColumns; k++) {
-      newColumnsData[k].push(table.rows[i].entries.at(k) ?? "")
+export const reformatTable = (table: Table): Table => {
+  // remove the unnecessary blank at the end of the columns
+  const newColumns: Column[] = table.columns.map(column => {
+    let index = column.length-1
+    while (index >= 0 && !column.at(index)) {
+      index -= 1
     }
-  }
-  newColumnsData[columnIndex] = column
+    return column.slice(0, index+1)
+  })
+
+  console.log(newColumns)
+
+  // extend columns if it is shorter than the longest
+  const lengths = newColumns.map(column => column.length)
+  const maxLength = Math.max(...lengths)
+
   return {
-    columnNames: table.columnNames,
-    columns: newColumnsData,
-    rows: buildTableRowsFromColumns(newColumnsData)
+    ...table,
+    columns: newColumns.map(column => {
+      const length = column.length
+      if (length < maxLength) {
+        column.splice(length, 0, ...(new Array(maxLength-length).fill("")))
+      }
+      return column
+    })
   }
 }
 
-export const buildTableRowsFromColumns = (columnsData: (string|number)[][]): Row[] => {
-  const lengths = columnsData.map(columnData => columnData.length)
-  const maxLength = Math.max(...lengths)
+export const updateTableWithNewColumn = (table: Table, columnIndex: number, column: (string|number)[]): Table => {
+  const newColumnsData = [...table.columns]
+  newColumnsData[columnIndex] = column
 
-  const rows: Row[] = []
-  for (let i=0; i<maxLength; i++) {
-    const entries = columnsData.map(columnData => columnData.at(i) ?? "")
-    rows.push({entries})
-  }
-  return rows
+  return reformatTable({
+    columnNames: table.columnNames,
+    columns: newColumnsData,
+  })
 }
 
 export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): Table => {
@@ -76,9 +85,8 @@ export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): Table
     estimateSheet.quantities,
     prices
   ]
-  const rows = buildTableRowsFromColumns(columns)
 
-  return {
+  return reformatTable({
     columnNames: [
       "大項目",
       "小項目",
@@ -87,6 +95,5 @@ export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): Table
       "価格",
     ],
     columns,
-    rows
-  }
+  })
 }

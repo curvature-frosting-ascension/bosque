@@ -114,9 +114,6 @@ export const ParseSheetScreen = (props: Props) => {
       <pre>
         {parseResult && parseResult.text}
       </pre>
-      <pre>
-        {parseResult && JSON.stringify(parseResult.estimateSheet, null, "\t")}
-      </pre>
     </Box>
   </Box>
 }
