@@ -1,6 +1,6 @@
-import {Column, EstimateSheet, Table} from "../../types"
+import {Column, Detail, EstimateSheet, Group, Table} from "../../types"
 
-export const retrieveColumn = (table: Table, columnIndex: number): (number|string)[] => {
+export const retrieveColumn = (table: Table, columnIndex: number): string[] => {
   return table.columns[columnIndex]
 }
 
@@ -55,7 +55,7 @@ export const reformatTable = (table: Table): Table => {
   }
 }
 
-export const updateTableWithNewColumn = (table: Table, columnIndex: number, column: (string|number)[]): Table => {
+export const updateTableWithNewColumn = (table: Table, columnIndex: number, column: string[]): Table => {
   const newColumnsData = [...table.columns]
   newColumnsData[columnIndex] = column
 
@@ -76,7 +76,7 @@ export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): Table
   const lastPrice = parseInt(estimateSheet.prices.at(-1) ?? "", 10)
   const remainingPrices = estimateSheet.prices.slice(0, -1).map(price => price ?? "").map(price => parseInt(price, 10))
   const total = remainingPrices.reduce((a, b) => a+b)
-  const prices = total === lastPrice ? remainingPrices: estimateSheet.prices
+  const prices = total === lastPrice ? remainingPrices.map(price => price.toString(10)): estimateSheet.prices
 
   const columns = [
     rowNames,
@@ -96,4 +96,61 @@ export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): Table
     ],
     columns,
   })
+}
+
+const createEmptyGroup = (): Group => {
+  return {
+    index: 0,
+    groupName: "",
+    details: []
+  }
+}
+
+const createDetail = (name: string, quantity: string, unit: string, price: string, priceMultiplier: number) => {
+  const parsedPrice = parseInt(price, 10)
+  return {
+    name: name,
+    quantity: `${quantity}${unit}`,
+    pricePerUnit: null,
+    price: isNaN(parsedPrice) ? 0: parsedPrice * priceMultiplier
+  }
+}
+
+export const convertTableForExport = (table: Table, priceMultiplier: number) => {
+  const groups: Group[] = []
+  const maxLength = Math.max(...table.columns.map(column => column.length))
+  let currentGroup = createEmptyGroup()
+  for (let i=0; i < maxLength; i++) {
+    const groupName = table.columns[0].at(i) ?? ""
+    const detailName = table.columns[1].at(i) ?? ""
+    const quantity = table.columns[2].at(i) ?? ""
+    const unit = table.columns[3].at(i) ?? ""
+    const price = table.columns[4].at(i) ?? ""
+    if (!groupName) {
+      currentGroup.details.push(createDetail(detailName, unit, quantity, price, priceMultiplier))
+    } else {
+      if (i !== 0) groups.push(currentGroup)
+      currentGroup = {
+        index: 0,
+        groupName: groupName.toString(),
+        details: [createDetail(detailName, unit, quantity, price, priceMultiplier)]
+      }
+    }
+  }
+  groups.push(currentGroup)
+  groups.forEach((group, index) => group.index = index+1)
+  return groups
+}
+
+export const exportDetailToClipboardString = (detail: Detail) => {
+  return `\t${detail.name}\t${detail.quantity}\t\t${detail.price}`
+}
+
+export const exportGroupToClipboardString = (group: Group) => {
+  return `${group.index}\t${group.groupName}
+  ${group.details.map(detail=>exportDetailToClipboardString(detail)).join("\n")}`
+}
+
+export const exportGroupsToClipboardString = (groups: Group[]) => {
+  return groups.map(group => exportGroupToClipboardString(group)).join(`\n\n`)
 }

@@ -12,11 +12,7 @@ export type ParseResult = {
   estimateSheet: EstimateSheet,
 }
 
-export type Row = {
-  entries: (string|number)[]
-}
-
-export type Column = (string|number)[]
+export type Column = string[]
 
 export type Table = {
   columnNames: string[],
@@ -24,13 +20,14 @@ export type Table = {
 }
 
 export type Detail = {
-  detail: string,
+  name: string,
   quantity: string,
-  unit: string,
+  pricePerUnit: number|null,
   price: number,
 }
 
-export type Entry = {
-  category: string,
+export type Group = {
+  index: number,
+  groupName: string,
   details: Detail[]
 }
