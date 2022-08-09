@@ -22,7 +22,7 @@ const Home: NextPage = () => {
     }
   }
   return <div>
-    <div style={{marginRight: "auto", marginLeft: "auto", maxWidth: 800}}>
+    <div style={{marginRight: "auto", marginLeft: "auto", maxWidth: 1000}}>
       <form onSubmit={onSubmit}>
         <div>
           <input type={"file"} name={"pdf"} ref={fileInputRef}/>

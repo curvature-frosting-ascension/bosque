@@ -33,13 +33,24 @@ export const DraggableTable = (props: Props) => {
     props.onUpdateTable(newTable)
   }
 
+  const updateItem = (columnIndex: number, itemIndex: number, newValue: string) => {
+    const newColumn = [...props.table.columns[columnIndex]]
+    newColumn[itemIndex] = newValue
+    const newTable = updateTableWithNewColumn(
+      props.table,
+      columnIndex,
+      newColumn
+    )
+    props.onUpdateTable(newTable)
+  }
+
   return <Box>
     <DndProvider backend={HTML5Backend}>
-      <Box sx={{display: "flex", "& .MuiBox-root": {m: 1, minWidth: 50,}}}>
-        {props.table.columnNames.map((columnName, index) => (
+      <Box sx={{display: "flex", "& .MuiBox-root": {m: 1, minWidth: 80,}}}>
+        {props.table.columnNames.map((columnName, columnIndex) => (
           <Box key={columnName}>
             <Box sx={{borderBottom: "1px solid darkgray", fontWeight: "bold", textAlign: "center"}}>{columnName}</Box>
-            {props.table.columns[index].map((item, itemIndex) => <DraggableTableItem key={`${item}-${itemIndex}`} id={`${item}-${itemIndex}`} index={itemIndex} text={item} type={columnName} moveItem={moveItem} />)}
+            {props.table.columns[columnIndex].map((item, itemIndex) => <DraggableTableItem key={`${item}-${itemIndex}`} id={`${item}-${itemIndex}`} index={itemIndex} text={item} type={columnName} moveItem={moveItem} updateItem={newValue => updateItem(columnIndex, itemIndex, newValue)} />)}
           </Box>
         ))}
       </Box>
