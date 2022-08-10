@@ -2,10 +2,15 @@ import React, {useState} from "react"
 import {Box, Button, CircularProgress, Typography} from "@mui/material"
 import Select from "react-select"
 import DoneIcon from '@mui/icons-material/Done'
-import {ParseResult} from "../../../types"
+import ErrorIcon from '@mui/icons-material/Error'
+import {ParseResult} from "../../../../types"
+import {FileInfo, FileInfoRow} from "./FileInfo"
+import {getFileExtension, isParsableFileType} from "../../../../utils/file"
+
+
 
 type Props = {
-  file: File | null,
+  file: File,
   moveNext: (parseResult: ParseResult) => void,
 }
 
@@ -19,7 +24,7 @@ const parseFormatOptions = [
   {value: "auto", label: "自動"},
 ]
 
-type ParseStatus = "initial" | "parsing" | "failed" | "parsed"
+type ParseStatus = "initial" |"nonParsable" | "parsing" | "failed" | "parsed"
 
 export const ParseSheetScreen = (props: Props) => {
   const [parseFormat, setParseFormat] = useState<ParseFormatOption|null>({
@@ -30,8 +35,6 @@ export const ParseSheetScreen = (props: Props) => {
   const [parseStatus, setParseStatus] = useState<ParseStatus>("initial")
   const [parseResult, setParseResult] = useState<ParseResult|null>(null)
   const onClickParse = async () => {
-    // if no file is set, skip the parsing
-    if (!props.file) return
     // if no format is set, skip the parsing
     if (!parseFormat) return
 
@@ -73,23 +76,37 @@ export const ParseSheetScreen = (props: Props) => {
     setParseStatus("parsed")
   }
 
-  if (!props.file) return <Box sx={{mt: 3, mx: 3}}>ファイルの読み込みに失敗しました。ファイルが選択されていない可能性があります。</Box>
+  const isParseButtonDisabled = () => {
+    if (parseStatus === "parsing") return true
+    if (parseStatus === "parsed") return true
+    return !isParsableFileType(getFileExtension(props.file.name))
+  }
   return <Box>
     <Box>
       <Box sx={{mt: 3, mx: 3}}>
         <Typography variant={"h6"}>{props.file.name}</Typography>
       </Box>
     </Box>
-    <Box sx={{border: "1px solid darkgray", borderRadius: 5, mt: 3}}>
-      <Box sx={{my: 1, mx: 3}}>
+    <Box sx={{border: "1px solid darkgray", borderRadius: 5, m: 1, p: 2, "& .MuiBox-root":{"&:not(:last-child)": {mb: 1}}}}>
+      <Box>
         <Typography variant={"body2"}>フォーマットを選択して、PDFファイルから情報を抜き出します。</Typography>
       </Box>
-      <Box sx={{display: "flex", my: 1, mx: 6, width: "100%"}}>
+      <FileInfo>
+        <FileInfoRow rowName={"ファイル名"}>{props.file.name}</FileInfoRow>
+        <FileInfoRow rowName={"ファイル形式"}>
+          {getFileExtension(props.file.name)}
+          {!isParsableFileType(getFileExtension(props.file.name)) && <Box sx={{display: "inline", verticalAlign: "middle", ml: 1, color: "red"}}>
+            <ErrorIcon fontSize={"small"}/>
+            <Box sx={{display: "inline", ml: 1, fontSize: "0.8em", verticalAlign: "middle"}}><Box></Box>パースできないファイル形式です</Box>
+          </Box>}
+        </FileInfoRow>
+        <FileInfoRow rowName={"フォーマット"}>
           <Select<ParseFormatOption> options={parseFormatOptions} value={parseFormat} onChange={(newValue) => setParseFormat(newValue)} />
-      </Box>
+        </FileInfoRow>
+      </FileInfo>
       <Box sx={{display: "flex", my: 1, mx: 6, flexDirection: "row-reverse", alignItems: "center", "& .MuiBox-root": {mt: 1, mx: 1}}}>
         <Box>
-          <Button variant={"contained"} color={"success"} onClick={onClickParse} disabled={parseStatus === "parsing" || parseStatus === "parsed"}>パースする</Button>
+          <Button variant={"contained"} color={"success"} onClick={onClickParse} disabled={isParseButtonDisabled()}>パースする</Button>
         </Box>
         <Box>
           {parseStatus === "parsing" && <Box sx={{display: "flex"}}>
@@ -99,6 +116,10 @@ export const ParseSheetScreen = (props: Props) => {
           {parseStatus === "parsed" && <Box sx={{display: "flex"}}>
             <Typography variant={"body2"}>完了しました</Typography>
             <DoneIcon fontSize={"small"} />
+          </Box>}
+          {parseStatus === "failed" && <Box sx={{display: "flex", color: "red"}}>
+            <Typography variant={"body2"}>パースに失敗しました</Typography>
+            <ErrorIcon fontSize={"small"} />
           </Box>}
         </Box>
       </Box>

@@ -1,7 +1,7 @@
 import {Box, StepButton} from "@mui/material"
 import {Stepper, Step} from "@mui/material"
 import {useState} from "react"
-import {ParseSheetScreen} from "../models/estimateSheet/ParseSheetScreen"
+import {ParseSheetScreen} from "../models/estimateSheet/parseSheetScreen/ParseSheetScreen"
 import {FileSelectScreen} from "../models/estimateSheet/FileSelectScreen"
 import {ParseResult, Table} from "../../types"
 import {EditParseResultScreen} from "../models/estimateSheet/EditParseResultScreen"
