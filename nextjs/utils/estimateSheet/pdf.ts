@@ -65,9 +65,9 @@ export const parseTextFormatAbilityRenovation = async (text: string): Promise<Pa
     }
   }
 
-  const estimateSheet = await response.json() as EstimateSheet
+  const data = await response.json()
   return {
     status: "success",
-    estimateSheet
+    estimateSheet: data.estimateSheet,
   }
 }

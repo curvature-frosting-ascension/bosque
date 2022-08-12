@@ -37,8 +37,6 @@ export const reformatTable = (table: Table): Table => {
     return column.slice(0, index+1)
   })
 
-  console.log(newColumns)
-
   // extend columns if it is shorter than the longest
   const lengths = newColumns.map(column => column.length)
   const maxLength = Math.max(...lengths)
@@ -75,7 +73,7 @@ export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): Table
   // remove sum
   const lastPrice = parseInt(estimateSheet.prices.at(-1) ?? "", 10)
   const remainingPrices = estimateSheet.prices.slice(0, -1).map(price => price ?? "").map(price => parseInt(price, 10))
-  const total = remainingPrices.reduce((a, b) => a+b)
+  const total = remainingPrices.length > 0 ? remainingPrices.reduce((a, b) => a+b): lastPrice
   const prices = total === lastPrice ? remainingPrices.map(price => price.toString(10)): estimateSheet.prices
 
   const columns = [
