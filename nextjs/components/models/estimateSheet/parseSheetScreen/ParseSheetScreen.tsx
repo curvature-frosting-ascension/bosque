@@ -1,13 +1,12 @@
-import React, {useState} from "react"
-import {Box, Button, CircularProgress, Typography} from "@mui/material"
+import React, {ChangeEvent, useState} from "react"
+import {Box, Button, CircularProgress, TextField, Typography} from "@mui/material"
 import Select from "react-select"
 import DoneIcon from '@mui/icons-material/Done'
 import ErrorIcon from '@mui/icons-material/Error'
 import {ParseResult} from "../../../../types"
 import {FileInfo, FileInfoRow} from "./FileInfo"
 import {getFileExtension, isParsableFileType} from "../../../../utils/file"
-
-
+import {parsePdf, parseTextFormatAbilityRenovation} from "../../../../utils/estimateSheet/pdf"
 
 type Props = {
   file: File,
@@ -15,22 +14,55 @@ type Props = {
 }
 
 type ParseFormatOption = {
-  value: string,
+  formatName: string,
   label: string,
+  page: string,
 }
 
-const parseFormatOptions = [
-  {value: "AbilityRenovation", label: "アビリティリノベーション"},
-  {value: "auto", label: "自動"},
+const parseFormatOptions: ParseFormatOption[] = [
+  {formatName: "AbilityRenovation", label: "アビリティリノベーション", page: "3"},
 ]
 
 type ParseStatus = "initial" |"nonParsable" | "parsing" | "failed" | "parsed"
+type Errors = {
+  page?: string
+}
 
 export const ParseSheetScreen = (props: Props) => {
   const [parseFormat, setParseFormat] = useState<ParseFormatOption|null>({
-    value: "AbilityRenovation",
-    label: "アビリティリノベーション"
+    formatName: "AbilityRenovation",
+    label: "アビリティリノベーション",
+    page: "3"
   })
+  const [errors, setErrors] = useState<{page?: string}>({})
+
+  const checkErrors = (): Errors => {
+    if (!parseFormat) return {}
+
+    const newErrors: Errors = {}
+    // check page
+    const parsedPage = parseInt(parseFormat.page, 10)
+    if (isNaN(parsedPage) || parsedPage < 1) {
+      newErrors.page = "有効なページ番号ではありません"
+    }
+
+    return newErrors
+  }
+
+  const resetErrors = () => {
+    setErrors({})
+  }
+
+  const onChangePage = (event: ChangeEvent<HTMLInputElement>) => {
+    resetErrors()
+    setParseFormat(parseFormat => {
+      if (!parseFormat) return parseFormat
+      return {
+        ...parseFormat,
+        page: event.target.value
+      }
+    })
+  }
 
   const [parseStatus, setParseStatus] = useState<ParseStatus>("initial")
   const [parseResult, setParseResult] = useState<ParseResult|null>(null)
@@ -38,40 +70,38 @@ export const ParseSheetScreen = (props: Props) => {
     // if no format is set, skip the parsing
     if (!parseFormat) return
 
+    // check the errors
+    // if error is found, skip the parsing
+    const errors = checkErrors()
+    setErrors(errors)
+    if (Object.keys(errors).length > 0) return
+
     // clear the parseResult
     setParseResult(null)
 
     setParseStatus("parsing")
-    const formData = new FormData()
-    formData.set("pdf", props.file)
 
-    // retrieve the text
-    const response = await fetch("https://func-h3wybuywzt.azurewebsites.net/api/parse-pdf?code=OLxYoe27n2nHcO-nDcfb1l_oMi6IeHQ9nbDfmBiG6mSDAzFuTifp_g==", {
-      method: "POST",
-      body: formData,
-    })
+    const parsePdfResult = await parsePdf(props.file, parseInt(parseFormat.page, 10))
 
-    if (!response.ok) {
+    if (parsePdfResult.status === "failed") {
       setParseStatus("failed")
       return
     }
 
-    const text = (await response.json()).text
-    // parse the text
-    const response2 = await fetch("https://func-h3wybuywzt.azurewebsites.net/api/parse-text-format-ability-renovation?code=QrnoNPOIu5Nl01XmHEx6534DK-HBJN40ODpVr6fdMCRxAzFuyfazLQ==", {
-      method: "POST",
-      body: text
-    })
+    const text = parsePdfResult.text
 
-    if (!response2.ok) {
+    // parse the text
+    const parseTextResult = await parseTextFormatAbilityRenovation(text)
+
+    if (parseTextResult.status === "failed") {
       setParseStatus("failed")
       return
     }
 
     setParseResult({
       text,
-      estimateSheet: await response2.json(),
-      format: parseFormat.value
+      estimateSheet: parseTextResult.estimateSheet,
+      format: parseFormat.formatName
     })
     setParseStatus("parsed")
   }
@@ -81,6 +111,7 @@ export const ParseSheetScreen = (props: Props) => {
     if (parseStatus === "parsed") return true
     return !isParsableFileType(getFileExtension(props.file.name))
   }
+
   return <Box>
     <Box>
       <Box sx={{mt: 3, mx: 3}}>
@@ -101,7 +132,10 @@ export const ParseSheetScreen = (props: Props) => {
           </Box>}
         </FileInfoRow>
         <FileInfoRow rowName={"フォーマット"}>
-          <Select<ParseFormatOption> options={parseFormatOptions} value={parseFormat} onChange={(newValue) => setParseFormat(newValue)} />
+          <Select<ParseFormatOption> getOptionValue={option => option.formatName} options={parseFormatOptions} value={parseFormat} onChange={(newValue) => setParseFormat(newValue)} />
+        </FileInfoRow>
+        <FileInfoRow rowName={"ページ"}>
+          <TextField size={"small"} value={parseFormat? parseFormat.page: ""} variant={"outlined"} onChange={onChangePage} error={!!errors.page} helperText={errors.page ?? ""} />
         </FileInfoRow>
       </FileInfo>
       <Box sx={{display: "flex", my: 1, mx: 6, flexDirection: "row-reverse", alignItems: "center", "& .MuiBox-root": {mt: 1, mx: 1}}}>
