@@ -8,10 +8,13 @@ import {
   convertTableForExport,
   exportGroupsToClipboardString,
 } from "../../../utils/estimateSheet/table"
+import {Explanation} from "./Explanation"
+import {BottomNavigation} from "./BottomNavigation"
 
 type Props = {
   table: Table,
   file: File,
+  moveBack: () => void,
 }
 
 const schema = yup.object({
@@ -35,40 +38,44 @@ export const ExportTableScreen = (props: Props) => {
   }
 
   return <Box>
-    <Box>
-      <Box sx={{mt: 3, mx: 3}}>
-        <Typography variant={"h6"}>{props.file.name}</Typography>
+    <Box p={2}>
+      <Explanation>
+        <Typography variant={"body2"}>
+          読み取り結果を出力します。価格の倍率を下のボックスで設定します。<br />
+          倍率を設定した後、出力方法を設定してください。<br />
+        </Typography>
+      </Explanation>
+      <Box p={1}>
+        <form onSubmit={handleSubmit(data => setMultiplier(data.multiplier))}>
+          <Box sx={{display: "flex"}}>
+            <OutlinedInput
+              {...register("multiplier")}
+              error={!!errors.multiplier}
+              size={"small"}
+              endAdornment={<InputAdornment position={"end"}>倍</InputAdornment>}
+            />
+            <Box mx={1}>
+              <Button variant={"contained"} color={"success"} type={"submit"}>決定</Button>
+            </Box>
+          </Box>
+        </form>
       </Box>
-    </Box>
-    <Box sx={{border: "1px solid darkgray", borderRadius: 5, mt: 3, p: 1}}>
-      <Box sx={{my: 1, mx: 3}}>
-        <Box sx={{display: "flex", justifyContent: "space-between"}}>
+      <Box mt={2}>
+        <Typography variant={"h6"}>出力：クリップボードにコピー</Typography>
+        <Box sx={{p: 1, display: "flex", justifyContent: "space-between"}}>
+          <Explanation>
+            <Typography variant={"body2"}>表をクリップボードにコピーします。コピーしたデータは「貼り付け用」シートに直接貼り付けられます。</Typography>
+          </Explanation>
           <Box>
-            <Typography variant={"body2"}>読み取り結果を出力します。価格の倍率を下のボックスで設定します。</Typography>
+            <Button variant={"contained"} color={"success"} onClick={onClickCopy} disabled={!multiplier}>コピー</Button>
           </Box>
         </Box>
       </Box>
-      <Box sx={{my: 1, mx: 3, display: "flex", justifyContent: "end", alignItems: "center", verticalAlign: "center"}}>
-        <form onSubmit={handleSubmit(data => setMultiplier(data.multiplier))}>
-          <OutlinedInput
-            {...register("multiplier")}
-            error={!!errors.multiplier}
-            size={"small"}
-            endAdornment={<InputAdornment position={"end"}>倍</InputAdornment>}
-          />
-          <Button variant={"contained"} size={"small"} type={"submit"}>決定</Button>
-        </form>
-      </Box>
     </Box>
-    <Box sx={{border: "1px solid darkgray", borderRadius: 5, mt: 3, p: 1}}>
-      <Box sx={{my: 1, mx: 3, display: "flex", justifyContent: "space-between"}}>
-        <Box>
-          <Typography variant={"body2"}>クリップボードにコピーします</Typography>
-        </Box>
-        <Box>
-          <Button onClick={onClickCopy} variant={"contained"} disabled={!multiplier}>コピー</Button>
-        </Box>
-      </Box>
-    </Box>
+    <BottomNavigation
+      back={{
+        onClick: props.moveBack
+      }}
+    />
   </Box>
 }

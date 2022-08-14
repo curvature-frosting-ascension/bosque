@@ -40,6 +40,19 @@ export const parsePdf = async (file: File, page: number): Promise<ParsePdfResult
   }
 }
 
+// setting for parseFormatOptions
+const _parseFormatOptions = {
+  "abilityRenovation": "アビリティリノベーション"
+}
+
+export type ParseFormatOption = keyof typeof _parseFormatOptions
+
+export const parseFormatOptions = Array.from(Object.keys(_parseFormatOptions)) as ParseFormatOption[]
+
+export const getParseFormatOptionLabel = (parseFormatOption: ParseFormatOption): string => {
+  return _parseFormatOptions[parseFormatOption]
+}
+
 type ParseTextResult = {
   status: "success",
   estimateSheet: EstimateSheet,
@@ -69,5 +82,14 @@ export const parseTextFormatAbilityRenovation = async (text: string): Promise<Pa
   return {
     status: "success",
     estimateSheet: data.estimateSheet,
+  }
+}
+
+export const parseText = async (format: ParseFormatOption, text: string): Promise<ParseTextResult> => {
+  switch(format) {
+    case "abilityRenovation":
+      return parseTextFormatAbilityRenovation(text)
+    default:
+      throw new Error("Have not implemented yet.")
   }
 }

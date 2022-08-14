@@ -1,8 +1,8 @@
 import {Box, StepButton} from "@mui/material"
 import {Stepper, Step} from "@mui/material"
 import {useState} from "react"
-import {ParseSheetScreen} from "../models/estimateSheet/parseSheetScreen/ParseSheetScreen"
-import {FileSelectScreen} from "../models/estimateSheet/FileSelectScreen"
+import {ParseSheetScreen} from "../models/estimateSheet/ParseSheetScreen"
+import {SelectFileScreen} from "../models/estimateSheet/SelectFileScreen"
 import {ParseResult, Table} from "../../types"
 import {EditParseResultScreen} from "../models/estimateSheet/EditParseResultScreen"
 import {ExportTableScreen} from "../models/estimateSheet/ExportTableScreen"
@@ -19,21 +19,30 @@ export const ProcessEstimateSheetPage = () => {
   const [parseResult, setParseResult] = useState<ParseResult|null>(null)
   const [table, setTable] = useState<Table|null>(null)
 
-  const onDrop = (acceptedFiles: File[]) => {
-    if (acceptedFiles) {
-      setFile(acceptedFiles[0])
-      setActiveStep(1)
-    }
-  }
-
   const [activeStep, setActiveStep] = useState(0)
 
-  const moveToEditParseResult = (parseResult: ParseResult) => {
-    setParseResult(parseResult)
+  const moveBackToSelectFile = () => {
+    setFile(null)
+    setActiveStep(0)
+  }
+  const moveBackToParseSheet = () => {
+    setParseResult(null)
+    setActiveStep(1)
+  }
+  const moveBackToEditParseResult = () => {
+    setTable(null)
     setActiveStep(2)
   }
 
-  const moveToExportTable = (table: Table) => {
+  const moveNextToParseSheet = (file: File) => {
+    setFile(file)
+    setActiveStep(1)
+  }
+  const moveNextToEditParseResult = (parseResult: ParseResult) => {
+    setParseResult(parseResult)
+    setActiveStep(2)
+  }
+  const moveNextToExportTable = (table: Table) => {
     setTable(table)
     setActiveStep(3)
   }
@@ -48,9 +57,9 @@ export const ProcessEstimateSheetPage = () => {
         </Step>
       ))}
     </Stepper>
-    {activeStep === 0 && <FileSelectScreen onDrop={onDrop}/>}
-    {activeStep === 1 && file && <ParseSheetScreen file={file} moveNext={moveToEditParseResult} />}
-    {activeStep === 2 && file && parseResult && <EditParseResultScreen parseResult={parseResult} file={file} moveNext={moveToExportTable}/>}
-    {activeStep === 3 && file && table && <ExportTableScreen table={table} file={file} />}
+    {activeStep === 0 && <SelectFileScreen onNext={moveNextToParseSheet}/>}
+    {activeStep === 1 && file && <ParseSheetScreen file={file} moveNext={moveNextToEditParseResult} moveBack={moveBackToSelectFile} />}
+    {activeStep === 2 && file && parseResult && <EditParseResultScreen parseResult={parseResult} file={file} moveNext={moveNextToExportTable} moveBack={moveBackToParseSheet}/>}
+    {activeStep === 3 && file && table && <ExportTableScreen table={table} file={file} moveBack={moveBackToEditParseResult}/>}
   </Box>
 }
