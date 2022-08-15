@@ -8,7 +8,7 @@ type ParsePdfResult = {
   error: string,
 }
 
-const parsePdfUrl = "https://func-bosque.azurewebsites.net/api/parse-pdf"
+const parsePdfUrl = "/api/estimateSheet/parsePdf"
 export const parsePdf = async (file: File, page: number): Promise<ParsePdfResult> => {
   const urlParams = new URLSearchParams({page: page.toString()})
   const url = parsePdfUrl + "?" + urlParams.toString()
@@ -18,9 +18,6 @@ export const parsePdf = async (file: File, page: number): Promise<ParsePdfResult
   const response = await fetch(url, {
     method: "POST",
     body: formData,
-    headers: {
-      "x-functions-key": "Nhk6lk4AC6SMZvZPxSuSqykocto77sxPeZh2vAezwPrvAzFuLXjz4A=="
-    }
   })
 
   if (!response.ok) {
@@ -61,13 +58,11 @@ type ParseTextResult = {
   error: string,
 }
 
+const parseTextFormatAbilityRenovationUrl = "/api/estimateSheet/parseTextFormatAbilityRenovation"
 export const parseTextFormatAbilityRenovation = async (text: string): Promise<ParseTextResult> => {
-  const response = await fetch(" https://func-bosque.azurewebsites.net/api/parse-text-format-ability-renovation", {
+  const response = await fetch(parseTextFormatAbilityRenovationUrl, {
     method: "POST",
     body: text,
-    headers: {
-      "x-functions-key": "Nhk6lk4AC6SMZvZPxSuSqykocto77sxPeZh2vAezwPrvAzFuLXjz4A=="
-    }
   })
   if (!response.ok) {
     const data = await response.json()
