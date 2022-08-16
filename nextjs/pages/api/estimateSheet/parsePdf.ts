@@ -18,6 +18,8 @@ const handler: NextApiHandler = async (req, res) => {
     res.status(400).send("page is not a valid number.")
     return
   }
+  const parser = req.query.parser
+  const format = req.query.format
 
   const apiKey = process.env["AZURE_FUNCTIONS_API_KEY"]
   if (!apiKey) {
@@ -25,7 +27,7 @@ const handler: NextApiHandler = async (req, res) => {
     return
   }
 
-  const apiResponse = await fetch(`https://func-bosque.azurewebsites.net/api/parse-pdf?page=${pageQuery}`, {
+  const apiResponse = await fetch(`https://func-bosque.azurewebsites.net/api/parse-pdf?page=${pageQuery}&parser=${parser}&format=${format}`, {
     method: "POST",
     body: await getRawBody.default(req),
     headers: {

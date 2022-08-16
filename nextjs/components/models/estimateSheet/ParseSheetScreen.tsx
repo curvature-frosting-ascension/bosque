@@ -15,9 +15,8 @@ import {getFileExtension, isParsableFileType} from "../../../utils/file"
 import {
   getParseFormatOptionLabel,
   ParseFormatOption,
-  parseFormatOptions,
+  parseFormatOptions, ParseParserOption, parseParserOptions,
   parsePdf,
-  parseTextFormatAbilityRenovation
 } from "../../../utils/estimateSheet/pdf"
 import {Explanation} from "./Explanation"
 import {BottomNavigation} from "./BottomNavigation"
@@ -25,10 +24,8 @@ import {BottomNavigation} from "./BottomNavigation"
 const parseStatuses = [
   "initial",
   "nonParsable",
-  "parsingFile",
-  "parsingText",
-  "failedParseFile",
-  "failedParseText",
+  "parsing",
+  "failed",
   "parsed"
 ] as const
 type ParseStatus = typeof parseStatuses[number]
@@ -42,18 +39,23 @@ export const ParseSheetScreen = (props: {
   moveNext: (parseResult: ParseResult) => void,
   moveBack: () => void,
 }) => {
-  const [parseFormat, setParseFormat] = useState<{format: ParseFormatOption, page: string}>({
+  const [parseOptions, setParseOptions] = useState<{
+    parser: ParseParserOption,
+    format: ParseFormatOption,
+    page: string
+  }>({
+    parser: "simple",
     format: "abilityRenovation",
     page: "3"
   })
   const [errors, setErrors] = useState<Errors>({})
 
   const checkErrors = (): Errors => {
-    if (!parseFormat) return {}
+    if (!parseOptions) return {}
 
     const newErrors: Errors = {}
     // check page
-    const parsedPage = parseInt(parseFormat.page, 10)
+    const parsedPage = parseInt(parseOptions.page, 10)
     if (isNaN(parsedPage) || parsedPage < 1) {
       newErrors.page = "有効なページ番号ではありません"
     }
@@ -65,13 +67,12 @@ export const ParseSheetScreen = (props: {
     setErrors({})
   }
 
-  const onChangePage = (event: ChangeEvent<HTMLInputElement>) => {
+  const onChangeParseOption = (changedOption: string, event: ChangeEvent<HTMLInputElement|HTMLTextAreaElement>) => {
     resetErrors()
-    setParseFormat(parseFormat => {
-      if (!parseFormat) return parseFormat
+    setParseOptions(parseOptions => {
       return {
-        ...parseFormat,
-        page: event.target.value
+        ...parseOptions,
+        [changedOption]: event.target.value
       }
     })
   }
@@ -79,8 +80,9 @@ export const ParseSheetScreen = (props: {
   const [parseStatus, setParseStatus] = useState<ParseStatus>("initial")
   const [parseResult, setParseResult] = useState<ParseResult|null>(null)
   const onClickParse = async () => {
+    console.log(parseOptions)
     // if no format is set, skip the parsing
-    if (!parseFormat) return
+    if (!parseOptions) return
 
     // check the errors
     // if error is found, skip the parsing
@@ -91,40 +93,26 @@ export const ParseSheetScreen = (props: {
     // clear the parseResult
     setParseResult(null)
 
-    setParseStatus("parsingFile")
+    setParseStatus("parsing")
 
-    const parsePdfResult = await parsePdf(props.file, parseInt(parseFormat.page, 10))
+    const parsePdfResult = await parsePdf(props.file, parseInt(parseOptions.page, 10), parseOptions.parser, parseOptions.format)
 
     if (parsePdfResult.status === "failed") {
-      setParseStatus("failedParseFile")
-      return
-    }
-
-    setParseStatus("parsingText")
-
-    const text = parsePdfResult.text
-
-    // parse the text
-    const parseTextResult = await parseTextFormatAbilityRenovation(text)
-
-    if (parseTextResult.status === "failed") {
-      setParseStatus("failedParseText")
+      setParseStatus("failed")
       return
     }
 
     setParseResult({
-      text,
-      estimateSheet: parseTextResult.estimateSheet,
-      format: parseFormat.format
+      estimateSheet: parsePdfResult.estimateSheet,
+      format: parseOptions.format
     })
     setParseStatus("parsed")
   }
 
   const isParseButtonDisabled = (): boolean => {
     switch (parseStatus) {
-      case "parsingFile":
-      case "parsingText":
       case "parsed":
+      case "parsing":
         return true
       default:
         return !isParsableFileType(getFileExtension(props.file.name))
@@ -144,7 +132,19 @@ export const ParseSheetScreen = (props: {
       <Box p={1} sx={{display: "flex", "& .MuiFormControl-root": {mx: 1}}}>
         <FormControl sx={{flexGrow: 2, display: "flex", alignItems: "center"}}>
           <TextField
-            value={parseFormat.format}
+            value={parseOptions.parser}
+            size={"small"}
+            label={"パーサー"}
+            fullWidth={true}
+            select={true}
+            onChange={e => onChangeParseOption("parser", e)}
+          >
+            {parseParserOptions.map(option => <MenuItem value={option} key={option}>{option}</MenuItem>)}
+          </TextField>
+        </FormControl>
+        <FormControl sx={{flexGrow: 2, display: "flex", alignItems: "center"}}>
+          <TextField
+            value={parseOptions.format}
             size={"small"}
             label={"フォーマット"}
             fullWidth={true}
@@ -153,14 +153,14 @@ export const ParseSheetScreen = (props: {
             {parseFormatOptions.map(option => <MenuItem value={option} key={option}>{getParseFormatOptionLabel(option)}</MenuItem>)}
           </TextField>
         </FormControl>
-        <FormControl sx={{flexGrow: 1}}>
+        <FormControl>
           <TextField
             size={"small"}
             fullWidth={true}
             label={"ページ番号"}
-            value={parseFormat? parseFormat.page: ""}
+            value={parseOptions? parseOptions.page: ""}
             variant={"outlined"}
-            onChange={onChangePage}
+            onChange={e => onChangeParseOption("page", e)}
             error={!!errors.page}
             helperText={errors.page ?? ""}
           />
@@ -171,24 +171,16 @@ export const ParseSheetScreen = (props: {
           <Button variant={"contained"} color={"success"} onClick={onClickParse} disabled={isParseButtonDisabled()}>パースする</Button>
         </Box>
         <Box>
-          {parseStatus === "parsingFile" && <Box sx={{display: "flex"}}>
+          {parseStatus === "parsing" && <Box sx={{display: "flex"}}>
             <Typography variant={"body2"}>PDFファイルを読み込んでいます...</Typography>
-            <CircularProgress size={"1rem"} />
-          </Box>}
-          {parseStatus === "parsingText" && <Box sx={{display: "flex"}}>
-            <Typography variant={"body2"}>表を読み込んでいます...</Typography>
             <CircularProgress size={"1rem"} />
           </Box>}
           {parseStatus === "parsed" && <Box sx={{display: "flex"}}>
             <Typography variant={"body2"}>完了しました</Typography>
             <DoneIcon fontSize={"small"} />
           </Box>}
-          {parseStatus === "failedParseFile" && <Box sx={{display: "flex", color: "red"}}>
+          {parseStatus === "failed" && <Box sx={{display: "flex", color: "red"}}>
             <Typography variant={"body2"}>ファイルの読み込みに失敗しました</Typography>
-            <ErrorIcon fontSize={"small"} />
-          </Box>}
-          {parseStatus === "failedParseText" && <Box sx={{display: "flex", color: "red"}}>
-            <Typography variant={"body2"}>表の読み込みに失敗しました</Typography>
             <ErrorIcon fontSize={"small"} />
           </Box>}
         </Box>

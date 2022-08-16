@@ -2,15 +2,19 @@ import {EstimateSheet} from "../../types"
 
 type ParsePdfResult = {
   status: "success",
-  text: string,
+  estimateSheet: EstimateSheet
 } | {
   status: "failed",
   error: string,
 }
 
 const parsePdfUrl = "/api/estimateSheet/parsePdf"
-export const parsePdf = async (file: File, page: number): Promise<ParsePdfResult> => {
-  const urlParams = new URLSearchParams({page: page.toString()})
+export const parsePdf = async (file: File, page: number, parser: string, format: string,): Promise<ParsePdfResult> => {
+  const urlParams = new URLSearchParams({
+    page: page.toString(),
+    parser,
+    format,
+  })
   const url = parsePdfUrl + "?" + urlParams.toString()
   const formData = new FormData()
   formData.set("pdf", file)
@@ -27,15 +31,21 @@ export const parsePdf = async (file: File, page: number): Promise<ParsePdfResult
     }
   }
 
-  const data = await response.json() as {result: {page: number, text: string}[]}
-  const pageData = data.result.find(o => o.page === page)
-  const text = pageData? pageData.text: ""
+  const data = await response.json()
 
   return {
     status: "success",
-    text
+    estimateSheet: data.result.estimateSheet
   }
 }
+
+// setting for parseParserOptions
+export const parseParserOptions = [
+  "simple",
+  "adobePdfExtract",
+]
+
+export type ParseParserOption = typeof parseParserOptions[number]
 
 // setting for parseFormatOptions
 const _parseFormatOptions = {

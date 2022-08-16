@@ -21,6 +21,7 @@ request query must contain:
 `
 
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
+  context.log(process.env["AdobePdfExtractApiPrivateKey"])
   // if help=true, return the help message
   const helpQuery = req.query.help
   if (helpQuery) {

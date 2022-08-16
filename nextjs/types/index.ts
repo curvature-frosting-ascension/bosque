@@ -9,7 +9,6 @@ export type EstimateSheet = {
 }
 
 export type ParseResult = {
-  text: string,
   format: string,
   estimateSheet: EstimateSheet,
 }
