@@ -1,7 +1,8 @@
 import {parse} from "csv-parse/sync"
 import {EstimateSheet} from "../../../types/estimateSheet"
+import {ParseResult} from "../parsers"
 
-export const parseTableFormatAbilityRenovation = (text: string): EstimateSheet => {
+export const parseTableFormatAbilityRenovation = (text: string): ParseResult => {
   const parsed: string[][] = parse(text)
 
   const estimateSheet: EstimateSheet = {
@@ -21,5 +22,8 @@ export const parseTableFormatAbilityRenovation = (text: string): EstimateSheet =
     })
   })
 
-  return estimateSheet
+  return {
+    status: "success",
+    estimateSheet
+  }
 }

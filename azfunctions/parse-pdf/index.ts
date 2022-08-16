@@ -1,32 +1,93 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions"
-import { PDFDocument } from "pdf-lib"
-import * as pdfParser from "pdf-parse"
+import {AzureFunction, Context, HttpRequest} from "@azure/functions"
+import {validateFormatQuery, validatePageQuery, validateParserQuery} from "./utils"
+import {parse} from "../lib/estimateSheet/parsers"
+import {extractPageFromPdf} from "../lib/pdf/extractPageFromPdf"
+
+const acceptedParsers = [
+  "simple",
+  "adobePdfExtract"
+]
+
+const acceptedFormats = [
+  "abilityRenovation"
+]
+
+const help = `
+extracts the estimateSheet from the given PDF file.
+request query must contain:
+  page: must be a valid page number.
+  format: must be one of ${acceptedFormats.join(", ")}
+  parser: must be one of ${acceptedParsers.join(", ")}
+`
 
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
-    const pdfFileBuffer = req.parseFormBody().get("pdf").value
-    const targetPages = req.query.page.split(",").map(s => parseInt(s, 10))
-    const pdfDocument = await PDFDocument.load(pdfFileBuffer)
-    const pdfPages = pdfDocument.getPages()
-    const result = []
-    for (const page of targetPages) {
-        if (page > pdfPages.length) continue
-        const newDocument = await PDFDocument.create()
-        const [copiedPage] = await newDocument.copyPages(pdfDocument, [page-1])
-        newDocument.addPage(copiedPage)
-        const newBytes = await newDocument.save()
-        const parsed = await pdfParser(Buffer.from(newBytes))
-        result.push({
-            page,
-            text: parsed.text
-        })
-    }
-
+  // if help=true, return the help message
+  const helpQuery = req.query.help
+  if (helpQuery) {
     context.res = {
-        body: JSON.stringify({result}),
-        headers: {
-            "Content-Type": "application/json"
-        }
+      status: 200,
+      body: help,
+      headers: {
+        "Content-Type": "plain/text"
+      }
     }
+    return
+  }
+
+  // validate page query
+  const pageValidationResult = validatePageQuery(req.query.page)
+  if (pageValidationResult.status === "error") {
+    context.res = {
+      status: 400,
+      body: JSON.stringify({error: pageValidationResult.error}),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+    return
+  }
+
+  // validate format query
+  const formatValidationResult = validateFormatQuery(req.query.format, acceptedFormats)
+  if (formatValidationResult.status === "error") {
+    context.res = {
+      status: 400,
+      body: JSON.stringify({error: formatValidationResult.error}),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+    return
+  }
+
+  // validate parser query
+  const parserValidationResult = validateParserQuery(req.query.parser, acceptedParsers)
+  if (parserValidationResult.status === "error") {
+    context.res = {
+      status: 400,
+      body: JSON.stringify({error: parserValidationResult.error}),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+    return
+  }
+
+  const page = pageValidationResult.validated
+  const format = formatValidationResult.validated
+  const parser = parserValidationResult.validated
+
+  const pdfFileBuffer = req.parseFormBody().get("pdf").value
+  const targetPageBuffer = await extractPageFromPdf(pdfFileBuffer, page)
+
+  const result = await parse(targetPageBuffer, parser, format)
+
+  context.res = {
+    body: JSON.stringify({result}),
+    headers: {
+      "Content-Type": "application/json"
+    }
+  }
 }
 
 export default httpTrigger

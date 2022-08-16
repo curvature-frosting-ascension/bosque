@@ -1,14 +1,4 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions"
-
-export type EstimateSheet = {
-  rowNames: string[],
-  specifications: string[],
-  units: string[],
-  quantities: string[],
-  pricePerUnits: string[],
-  prices: string[],
-  notes: string[]
-}
+import {ParseResult} from "../parsers"
 
 export const combine = (names: string[]): {combined: string, split: string[]}[] => {
   let possibleCombinations: {combined: string, split: string[]}[] = []
@@ -26,15 +16,7 @@ export const combine = (names: string[]): {combined: string, split: string[]}[] 
   return possibleCombinations
 }
 
-export type ParseResult = {
-  status: "success",
-  estimateSheet: EstimateSheet,
-} | {
-  status: "failed",
-  error: string,
-}
-
-export const parse = (text: string): ParseResult => {
+export const parseSimpleTextFormatAbilityRenovation = (text: string): ParseResult => {
   const columnNames = [
     "名    称",
     "仕様・規格",
@@ -55,7 +37,7 @@ export const parse = (text: string): ParseResult => {
       if (line === "明細書" || line === "明  細  書") return false
       // remove the page number
       if (line.match(/Page\.\s?[0-9]+/)) return false
-      // 
+      //
       return true
     })
     // split the column names
@@ -93,39 +75,6 @@ export const parse = (text: string): ParseResult => {
       pricePerUnits,
       prices,
       notes
-    }
-  }
-}
-
-export const index: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
-  const text: string = req.body || ""
-  if (!text) {
-    context.res = {
-      status: 400,
-      body: JSON.stringify({
-          error: "the text to be parsed was not provided in the request body/"
-      })
-    }
-    return
-  }
-
-  const result = parse(text)
-
-  if (result.status === "failed") {
-    context.res = {
-      status: 400,
-      body: JSON.stringify(result),
-      headers: {
-        "Content-Type": "application/json"
-      }
-    }
-  } else {
-    context.res = {
-      status: 200,
-      body: JSON.stringify(result),
-      headers: {
-        "Content-Type": "application/json"
-      }
     }
   }
 }
