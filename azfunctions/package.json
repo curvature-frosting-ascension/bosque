@@ -11,12 +11,16 @@
     "deploy": "func azure functionapp publish func-bosque"
   },
   "dependencies": {
+    "@adobe/pdfservices-node-sdk": "^2.2.3",
     "@types/jest": "^28.1.6",
+    "csv": "^6.2.0",
+    "node-stream-zip": "^1.15.0",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1"
   },
   "devDependencies": {
     "@azure/functions": "^3.0.0",
+    "@types/adobe__pdfservices-node-sdk": "^2.2.0",
     "@types/node": "16.x",
     "@types/pdf-parse": "^1.1.1",
     "jest": "^28.1.3",
