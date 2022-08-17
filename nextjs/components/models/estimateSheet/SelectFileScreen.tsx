@@ -42,7 +42,7 @@ export const SelectFileScreen = (props: Props) => {
             "ここにファイルをドロップしてください" :
             <p>
               {!file && <span>ここにファイルをドラッグ＆ドロップしてください。<br/>あるいはクリックしてファイルを選択してください。</span>}
-              {file && <Typography variant={"h6"}>選択されたファイル：{file.name}</Typography>}
+              {file && <Typography variant={"h6"} component={"span"}>選択されたファイル：{file.name}</Typography>}
               {file && !isParsableFileType(getFileExtension(file.name)) && <Typography sx={{color: "red"}}>PDFファイルではありません。もう一度選択してください。</Typography>}
             </p>
           }

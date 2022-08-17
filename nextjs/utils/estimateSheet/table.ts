@@ -71,17 +71,23 @@ export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): Table
   })
 
   // remove sum
-  const lastPrice = parseInt(estimateSheet.prices.at(-1) ?? "", 10)
-  const remainingPrices = estimateSheet.prices.slice(0, -1).map(price => price ?? "").map(price => parseInt(price, 10))
-  const total = remainingPrices.length > 0 ? remainingPrices.reduce((a, b) => a+b): lastPrice
-  const prices = total === lastPrice ? remainingPrices.map(price => price.toString(10)): estimateSheet.prices
+  const lastPriceReversedIndex = [...estimateSheet.prices].reverse().findIndex(price => price)
+  if (lastPriceReversedIndex > 0) {
+    const lastPriceIndex = estimateSheet.prices.length - 1 - lastPriceReversedIndex
+    const lastPrice = parseInt(estimateSheet.prices[lastPriceIndex], 10)
+    const remainingPrices = estimateSheet.prices.slice(0, lastPriceReversedIndex-1).map(price => price ?? "").map(price => parseInt(price, 10))
+    const total = remainingPrices.length > 0 ? remainingPrices.reduce((a, b) => a+b): lastPrice
+    if (total === lastPrice) {
+      estimateSheet.prices.splice(lastPriceIndex, 1, "")
+    }
+  }
 
   const columns = [
     rowNames,
     estimateSheet.specifications,
     estimateSheet.units,
     estimateSheet.quantities,
-    prices
+    estimateSheet.prices,
   ]
 
   return reformatTable({
