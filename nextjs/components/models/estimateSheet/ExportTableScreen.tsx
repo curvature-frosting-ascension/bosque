@@ -1,18 +1,18 @@
 import {Box, Button, InputAdornment, OutlinedInput, Typography} from "@mui/material"
-import {Table} from "../../../types"
+import {TableByColumns} from "../../../types"
 import {useState} from "react"
 import {useForm} from "react-hook-form"
 import {yupResolver} from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import {
   convertTableForExport,
-  exportGroupsToClipboardString,
+  exportGroupsToClipboardString, multiplyPrices,
 } from "../../../utils/estimateSheet/table"
 import {Explanation} from "./Explanation"
 import {BottomNavigation} from "./BottomNavigation"
 
 type Props = {
-  table: Table,
+  table: TableByColumns,
   file: File,
   moveBack: () => void,
 }
@@ -31,10 +31,16 @@ export const ExportTableScreen = (props: Props) => {
 
   const [multiplier, setMultiplier] = useState<number|null>(null)
 
-  const onClickCopy = async () => {
+  const onClickCopyToClipboard = async () => {
     if (!multiplier) return
-    const groups = convertTableForExport(props.table, multiplier)
+    const groups = convertTableForExport(multiplyPrices(props.table, multiplier), multiplier)
     await navigator.clipboard.writeText(exportGroupsToClipboardString(groups))
+  }
+
+  const onClickDownloadCSV = async () => {
+    if (!multiplier) return
+    const exportedTable = multiplyPrices(props.table, multiplier)
+
   }
 
   return <Box>
@@ -67,7 +73,7 @@ export const ExportTableScreen = (props: Props) => {
             <Typography variant={"body2"}>表をクリップボードにコピーします。コピーしたデータは「貼り付け用」シートに直接貼り付けられます。</Typography>
           </Explanation>
           <Box>
-            <Button variant={"contained"} color={"success"} onClick={onClickCopy} disabled={!multiplier}>コピー</Button>
+            <Button variant={"contained"} color={"success"} onClick={onClickCopyToClipboard} disabled={!multiplier}>コピー</Button>
           </Box>
         </Box>
       </Box>

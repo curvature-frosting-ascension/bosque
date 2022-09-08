@@ -15,9 +15,15 @@ export type ParseResult = {
 
 export type Column = string[]
 
-export type Table = {
+export type TableByColumns = {
   columnNames: string[],
   columns: Column[],
+}
+
+export type Row = string[]
+
+export type TableByRows = {
+  rows: Row[]
 }
 
 export type Detail = {

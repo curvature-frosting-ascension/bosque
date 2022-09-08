@@ -1,4 +1,4 @@
-import {Table} from "../../../types"
+import {TableByColumns} from "../../../types"
 import {Box} from "@mui/material"
 import {reorderColumn, retrieveColumn, updateTableWithNewColumn} from "../../../utils/estimateSheet/table"
 import {DraggableTableItem} from "./DraggableTableItem"
@@ -6,8 +6,8 @@ import {DndProvider} from "react-dnd"
 import { HTML5Backend } from 'react-dnd-html5-backend'
 
 type Props = {
-  table: Table,
-  onUpdateTable: (table: Table) => void,
+  table: TableByColumns,
+  onUpdateTable: (table: TableByColumns) => void,
 }
 
 

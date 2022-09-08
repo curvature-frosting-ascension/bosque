@@ -3,7 +3,7 @@ import {Stepper, Step} from "@mui/material"
 import {useState} from "react"
 import {ParseSheetScreen} from "../models/estimateSheet/ParseSheetScreen"
 import {SelectFileScreen} from "../models/estimateSheet/SelectFileScreen"
-import {ParseResult, Table} from "../../types"
+import {ParseResult, TableByColumns} from "../../types"
 import {EditParseResultScreen} from "../models/estimateSheet/EditParseResultScreen"
 import {ExportTableScreen} from "../models/estimateSheet/ExportTableScreen"
 
@@ -17,7 +17,7 @@ const steps = [
 export const ProcessEstimateSheetPage = () => {
   const [file, setFile] = useState<File|null>(null)
   const [parseResult, setParseResult] = useState<ParseResult|null>(null)
-  const [table, setTable] = useState<Table|null>(null)
+  const [table, setTable] = useState<TableByColumns|null>(null)
 
   const [activeStep, setActiveStep] = useState(0)
 
@@ -42,7 +42,7 @@ export const ProcessEstimateSheetPage = () => {
     setParseResult(parseResult)
     setActiveStep(2)
   }
-  const moveNextToExportTable = (table: Table) => {
+  const moveNextToExportTable = (table: TableByColumns) => {
     setTable(table)
     setActiveStep(3)
   }

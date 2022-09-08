@@ -1,4 +1,5 @@
 import {NextApiHandler} from "next"
+import {getEnvironmentVariable} from "../../../environmentVariables"
 
 const handler: NextApiHandler = async (req, res) => {
   const text: string = req.body
@@ -7,7 +8,7 @@ const handler: NextApiHandler = async (req, res) => {
     return
   }
 
-  const apiKey = process.env["AZURE_FUNCTIONS_API_KEY"]
+  const apiKey = getEnvironmentVariable("AZURE_FUNCTIONS_API_KEY")
   if (!apiKey) {
     res.status(500).json({error: "AZURE_FUNCTIONS_API_KEY is not set."})
     return

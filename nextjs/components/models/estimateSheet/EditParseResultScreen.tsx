@@ -1,5 +1,5 @@
 import {Box, Typography} from "@mui/material"
-import {ParseResult, Table} from "../../../types"
+import {ParseResult, TableByColumns} from "../../../types"
 import {useState} from "react"
 import {DraggableTable} from "./DraggableTable"
 import {buildTableFromEstimateSheet} from "../../../utils/estimateSheet/table"
@@ -9,13 +9,13 @@ import {BottomNavigation} from "./BottomNavigation"
 type Props = {
   parseResult: ParseResult,
   file: File,
-  moveNext: (table: Table) => void,
+  moveNext: (table: TableByColumns) => void,
   moveBack: () => void,
 }
 
 export const EditParseResultScreen = (props: Props) => {
-  const [table, setTable] = useState<Table>(buildTableFromEstimateSheet(props.parseResult.estimateSheet))
-  const updateTable = (table: Table) => setTable(table)
+  const [table, setTable] = useState<TableByColumns>(buildTableFromEstimateSheet(props.parseResult.estimateSheet))
+  const updateTable = (table: TableByColumns) => setTable(table)
 
   return <Box>
     <Box sx={{p: 2}}>

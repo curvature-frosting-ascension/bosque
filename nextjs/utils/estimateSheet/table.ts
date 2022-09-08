@@ -1,6 +1,14 @@
-import {Column, Detail, EstimateSheet, Group, Table} from "../../types"
+import {Column, Detail, EstimateSheet, Group, TableByColumns} from "../../types"
 
-export const retrieveColumn = (table: Table, columnIndex: number): string[] => {
+export const COLUMN_NAMES = [
+  "大項目",
+  "小項目",
+  "単位",
+  "数量",
+  "価格",
+]
+
+export const retrieveColumn = (table: TableByColumns, columnIndex: number): string[] => {
   return table.columns[columnIndex]
 }
 
@@ -27,7 +35,7 @@ export const reorderColumn = <T>(column: T[], startRowIndex: number, endRowIndex
   return newColumn
 }
 
-export const reformatTable = (table: Table): Table => {
+export const reformatTable = (table: TableByColumns): TableByColumns => {
   // remove the unnecessary blank at the end of the columns
   const newColumns: Column[] = table.columns.map(column => {
     let index = column.length-1
@@ -53,7 +61,7 @@ export const reformatTable = (table: Table): Table => {
   }
 }
 
-export const updateTableWithNewColumn = (table: Table, columnIndex: number, column: string[]): Table => {
+export const updateTableWithNewColumn = (table: TableByColumns, columnIndex: number, column: string[]): TableByColumns => {
   const newColumnsData = [...table.columns]
   newColumnsData[columnIndex] = column
 
@@ -63,7 +71,7 @@ export const updateTableWithNewColumn = (table: Table, columnIndex: number, colu
   })
 }
 
-export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): Table => {
+export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): TableByColumns => {
   // remove notes
   const rowNames = estimateSheet.rowNames.filter(name => {
     if (name === "以下余白") return false
@@ -91,13 +99,7 @@ export const buildTableFromEstimateSheet = (estimateSheet: EstimateSheet): Table
   ]
 
   return reformatTable({
-    columnNames: [
-      "大項目",
-      "小項目",
-      "単位",
-      "数量",
-      "価格",
-    ],
+    columnNames: COLUMN_NAMES,
     columns,
   })
 }
@@ -120,7 +122,27 @@ const createDetail = (name: string, quantity: string, unit: string, price: strin
   }
 }
 
-export const convertTableForExport = (table: Table, priceMultiplier: number) => {
+export const multiplyPrices = (table: TableByColumns, multiplier: number) => {
+  const pricePositionInColumns = COLUMN_NAMES.findIndex(name => name === "価格")
+  if (pricePositionInColumns < 0) {
+    throw new Error("価格 was not found in COLUMN_NAMES")
+  }
+
+  const newPrices = table.columns[pricePositionInColumns].map(price => {
+    const parsedPrice = parseInt(price, 10)
+    if (Number.isFinite(parsedPrice)) {
+      return (parsedPrice * multiplier).toString()
+    }
+    return price
+  })
+
+  return {
+    ...table,
+    columns: [...table.columns].splice(pricePositionInColumns, 1, newPrices)
+  }
+}
+
+export const convertTableForExport = (table: TableByColumns, priceMultiplier: number) => {
   const groups: Group[] = []
   const maxLength = Math.max(...table.columns.map(column => column.length))
   let currentGroup = createEmptyGroup()
